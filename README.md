@@ -2,14 +2,13 @@
 
 ## Educationでの再生について
 
-`Education`での再生は、元々教育機関向けの有償コンテンツです。再生には「キー」が必要で、これは一時的なもので、通常は3日程度で有効期限が切れます。そのため、再生するたびにキーを更新する必要があります。
+`Education`での再生は、元々教育機関向けの有償コンテンツです。再生にはキーが必要ですが、これは一時的なもので、通常は3日程度で有効期限が切れます。そのため、再生するたびにキーを更新する必要があります。
 
 ### 再生方法
 
 以下のリンクフォーマットを使うことで、エラーが出ずに動画を再生できます。
 
 https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
-
 
 ---
 
@@ -22,14 +21,10 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 
 ### URL例
 
-- **URLパラメーター（わかめさん）**  
+- **取得したものをそのまま使えます**  
   `https://raw.githubusercontent.com/wakame02/wktopu/refs/heads/main/edu.text`  
-  ➥ 体験版
-
 - **利用しているサイトの例**  
-  `https://html.cafe/x146818bd`
-
-- **わかめtube**
+- わかめtube
 
 ---
 
@@ -44,14 +39,11 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 
 - **URLパラメーター（siawaseokさん）**  
   `https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json`  
-  ➥ 体験版
 
 - **利用しているサイトの例**  
-  `https://html.cafe/x82fb6e32`
-
-- **しあtube**  
-- **YuZuTube**  
-- **れんれんtube**
+- しあtube
+- YuZuTube
+- れんれんtube
 
 ---
 
