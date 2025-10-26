@@ -24,7 +24,7 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 - **取得したものをそのまま使えます**  
   `https://raw.githubusercontent.com/wakame02/wktopu/refs/heads/main/edu.text`  
 - **利用しているサイトの例**  
--- わかめtube
+わかめtube
 
 ---
 
@@ -41,9 +41,9 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
   `https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json`  
 
 - **利用しているサイトの例**  
-- しあtube
-- YuZuTube
-- れんれんtube
+しあtube
+YuZuTube
+れんれんtube
 
 ---
 
