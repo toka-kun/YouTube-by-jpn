@@ -17,7 +17,7 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 - **タイトルとチャンネル名を表示**したい方におすすめ。
 - 更新頻度が低く、**エラーコード5**が発生することがあるため、代替手段として**siawaseokさんのパラメーター**も準備しておくと安心です。
 
-### URL例
+### URL
 
 - **取得したものをそのまま使えます**  
   `https://raw.githubusercontent.com/wakame02/wktopu/refs/heads/main/edu.text`  
@@ -30,12 +30,11 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 
 ### 特徴
 
-- 更新頻度が非常に高いため、ほぼ常に視聴可能です。
-- **確実に動作**するため、多くのサイトで利用されています。
+- 更新頻度が高いため、ほぼ常に視聴可能です。
 
-### URL例
+### URL
 
-- **URLパラメーター（siawaseokさん）**  
+- **paramsを取得しましょう**  
   `https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json`  
 
 - **利用しているサイトの例**  
@@ -43,7 +42,20 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 
 ---
 
+## woolisbest4520さんが更新しているURLパラメーター
+
+### 特徴
+
+- 更新頻度が高いため、ほぼ常に視聴可能です。siawaseokさんのやつとほとんど同じですが、最初から再生すると20秒で一時停止します。
+
+### URL
+
+- **keyを取得しましょう**  
+  `https://raw.githubusercontent.com/woolisbest-4520/about-youtube/refs/heads/main/parameter.json`  
+
+---
+
 ## 注意点
 
 - わかめさんのパラメーターが動作しない場合、siawaseokさんのパラメーターに切り替えて試してみてください。
-- 両方のパラメーターを活用することで、より安定して視聴できます。
+- 全てのパラメーターを活用することで、より安定して視聴できます。
