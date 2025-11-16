@@ -22,7 +22,7 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 - **ここから取得したものをそのまま使えます**  
   `https://raw.githubusercontent.com/wakame02/wktopu/refs/heads/main/edu.text`  
 - **利用しているサイトの例**  
-わかめtube
+  - わかめtube → https://github.com/wakame02/wkt
 
 ---
 
@@ -38,7 +38,8 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
   `https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json`  
 
 - **利用しているサイトの例**  
-しあtube
+  - わかめtube Edu改造版 → https://github.com/toka-kun/wkt
+  - しあtube → https://github.com/siawaseoktest/youtube
 
 ---
 
@@ -54,7 +55,7 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
   `https://raw.githubusercontent.com/woolisbest-4520/about-youtube/refs/heads/main/parameter.json`
 
 - **利用しているサイトの例**  
-Wool-Tube Education版
+  - Wool-Tube Education版 → https://github.com/woolisbest-4520/wooltube-education
 
 ---
 
