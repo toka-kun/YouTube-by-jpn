@@ -19,7 +19,7 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 
 ### URL
 
-- **取得したものをそのまま使えます**  
+- **ここから取得したものをそのまま使えます**  
   `https://raw.githubusercontent.com/wakame02/wktopu/refs/heads/main/edu.text`  
 - **利用しているサイトの例**  
 わかめtube
@@ -51,7 +51,10 @@ https://www.youtubeeducation.com/embed/(動画のID)(パラメーター)
 ### URL
 
 - **keyを取得しましょう**  
-  `https://raw.githubusercontent.com/woolisbest-4520/about-youtube/refs/heads/main/parameter.json`  
+  `https://raw.githubusercontent.com/woolisbest-4520/about-youtube/refs/heads/main/parameter.json`
+
+- **利用しているサイトの例**  
+Wool-Tube Education版
 
 ---
 
