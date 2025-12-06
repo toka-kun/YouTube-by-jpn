@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>高音質タイムストレッチプレイヤー — UI強化版</title>
+<style>
+:root{--primary:#007bff;--primary-dark:#0056b3;--bg:#fafafa}
+body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:#111;margin:0;padding:18px;display:flex;justify-content:center}
+.app{width:100%;max-width:980px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:18px;margin:0}
+.controls{margin-top:12px;display:grid;gap:10px}
+.row{display:flex;gap:8px;align-items:center}
+input[type=text]{flex:1;padding:9px;border-radius:6px;border:1px solid #ccc}
+button{padding:8px 12px;border-radius:6px;border:none;background:var(--primary);color:#fff;cursor:pointer}
+button.secondary{background:#6c757d}
+button.ghost{background:transparent;color:var(--primary);border:1px solid #ddd}
+button:focus{outline:3px solid rgba(0,123,255,0.25)}
+.slider-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1}
+.video-wrap{margin-top:14px}
+video{width:100%;border-radius:8px;background:#000}
+.status{margin-top:10px;font-size:14px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.preset-btn{padding:6px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer}
+.dropzone{margin-top:8px;padding:12px;border:2px dashed #ccc;border-radius:8px;text-align:center;color:#666}
+.small{font-size:13px;color:#555}
+.tooltip{font-size:12px;color:#666}
+kbd{background:#eee;border-radius:4px;padding:2px 6px;font-size:12px;border:1px solid #ddd}
+.bad{color:crimson}
+.good{color:green}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="高音質タイムストレッチプレイヤー UI強化版">
+  <div class="header">
+    <h1>🎬 高音質タイムストレッチプレイヤー — UI強化版</h1>
+    <div class="tooltip">キーボード: <kbd>Space</kbd>=再生/停止 <kbd>&larr;&rarr;</kbd>=10秒シーク <kbd>&uarr;&darr;</kbd>=音量 ±5 <kbd><</kbd>/<kbd>></kbd>=速度 ±0.05</div>
+  </div>
+
+  <div class="controls" aria-live="polite">
+    <div class="row">
+      <label for="videoURL" class="small" style="margin-right:8px">動画 URL</label>
+      <input id="videoURL" type="text" placeholder="https://... もしくはここへファイルをドロップ" aria-label="動画URL入力">
+      <button id="btnLoad" title="動画と音声を読み込み">読み込み</button>
+      <button id="btnPlay" title="再生 (Space)">▶ 再生</button>
+      <button id="btnPause" title="停止">⏸ 停止</button>
+    </div>
+
+    <div class="row">
+      <label for="audioURL" class="small" style="margin-right:8px">音声 URL</label>
+      <input id="audioURL" type="text" placeholder="https://... またはここへ音声ファイルをドロップ" aria-label="音声URL入力">
+      <button id="btnSyncNow" class="ghost" title="手動で音声の再同期">同期合わせ</button>
+    </div>
+
+    <div id="dropzone" class="dropzone" tabindex="0" aria-label="ファイルをここにドロップして読み込み">音声/動画ファイルをここにドラッグ&ドロップ、またはURLをペースト</div>
+
+    <div class="slider-row" aria-label="音声遅延">
+      <label class="small" for="delaySlider">遅延（秒）<span id="delayValue">0.00</span></label>
+      <input id="delaySlider" type="range" min="-1" max="1" step="0.01" value="0" aria-label="音声遅延スライダー">
+    </div>
+
+    <div class="slider-row" aria-label="音量">
+      <label class="small" for="volumeSlider">音量 <span id="volumeValue">100%</span></label>
+      <input id="volumeSlider" type="range" min="0" max="100" step="1" value="100" aria-label="音量スライダー">
+    </div>
+
+    <div class="slider-row" aria-label="再生速度">
+      <label class="small" for="speedSlider">速度 <span id="speedValue">1.00x</span></label>
+      <input id="speedSlider" type="range" min="0.25" max="2" step="0.01" value="1" aria-label="速度スライダー">
+    </div>
+
+    <div class="slider-row" aria-label="ドリフト補正強度">
+      <label class="small">補正 <span id="strengthValue">1.00</span></label>
+      <input id="strengthSlider" type="range" min="0" max="10" step="0.01" value="1" aria-label="補正強度スライダー">
+    </div>
+
+    <div class="row">
+      <label><input id="loopToggle" type="checkbox" aria-label="ループ切替"> ループ再生</label>
+      <label style="margin-left:8px"><input id="autoSyncToggle" type="checkbox" checked> 自動同期（オン/オフ）</label>
+    </div>
+
+    <div class="row">
+      <div class="presets" aria-label="プリセット">
+        <button id="savePresetBtn" class="preset-btn" title="現在の設定をプリセットとして保存">プリセット保存</button>
+        <button id="loadPresetBtn" class="preset-btn" title="プリセットから読み込み">プリセット読み込み</button>
+        <button id="exportPresetBtn" class="preset-btn" title="プリセットをファイルとしてエクスポート">エクスポート</button>
+        <button id="importPresetBtn" class="preset-btn" title="プリセットをファイルからインポート">インポート</button>
+        <button id="resetPresetsBtn" class="preset-btn" title="すべてのプリセットを削除">プリセット全削除</button>
+      </div>
+    </div>
+
+    <div id="presetList" class="small"></div>
+
+    <div id="driftDisplay" class="status" aria-live="polite">ズレ: 0.000 秒</div>
+    <div id="info" class="small"></div>
+  </div>
+
+  <div class="video-wrap">
+    <video id="video" controls crossorigin="anonymous" aria-label="動画プレイヤー"></video>
+    <audio id="audio" crossorigin="anonymous" style="display:none"></audio>
+  </div>
+</div>
+
+<script>
+/* ======= 基本（改善版ベース） + UI強化 ======= */
+const video = document.getElementById('video');
+const audio = document.getElementById('audio');
+const btnLoad = document.getElementById('btnLoad');
+const btnPlay = document.getElementById('btnPlay');
+const btnPause = document.getElementById('btnPause');
+const btnSyncNow = document.getElementById('btnSyncNow');
+
+const videoURL = document.getElementById('videoURL');
+const audioURL = document.getElementById('audioURL');
+const dropzone = document.getElementById('dropzone');
+
+const delaySlider = document.getElementById('delaySlider');
+const volumeSlider = document.getElementById('volumeSlider');
+const speedSlider = document.getElementById('speedSlider');
+const strengthSlider = document.getElementById('strengthSlider');
+const loopToggle = document.getElementById('loopToggle');
+const autoSyncToggle = document.getElementById('autoSyncToggle');
+
+const delayValue = document.getElementById('delayValue');
+const volumeValue = document.getElementById('volumeValue');
+const speedValue = document.getElementById('speedValue');
+const strengthValue = document.getElementById('strengthValue');
+const driftDisplay = document.getElementById('driftDisplay');
+const info = document.getElementById('info');
+
+const savePresetBtn = document.getElementById('savePresetBtn');
+const loadPresetBtn = document.getElementById('loadPresetBtn');
+const exportPresetBtn = document.getElementById('exportPresetBtn');
+const importPresetBtn = document.getElementById('importPresetBtn');
+const resetPresetsBtn = document.getElementById('resetPresetsBtn');
+const presetList = document.getElementById('presetList');
+
+let audioCtx = null, sourceNode = null, gainNode = null;
+let rafId = null;
+let audioDelay = 0.0;
+let baseSpeed = 1.0;
+let userDriftStrength = 1.0;
+let driftStrength = 1.0;
+let isLooping = false;
+let isSyncing = false;
+
+/* ======= ローカルプリセット管理（localStorage） ======= */
+const PRESET_KEY = 'ts_player_presets_v1';
+
+function loadPresets(){
+  try {
+    const raw = localStorage.getItem(PRESET_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e){ return {}; }
+}
+function savePresets(obj){
+  localStorage.setItem(PRESET_KEY, JSON.stringify(obj));
+}
+function addPreset(name, cfg){
+  const ps = loadPresets();
+  ps[name] = cfg;
+  savePresets(ps);
+  renderPresetList();
+}
+function removePreset(name){
+  const ps = loadPresets();
+  delete ps[name];
+  savePresets(ps);
+  renderPresetList();
+}
+function renderPresetList(){
+  const ps = loadPresets();
+  if(Object.keys(ps).length === 0){
+    presetList.textContent = 'プリセットはありません';
+    return;
+  }
+  presetList.innerHTML = '';
+  for(const k of Object.keys(ps)){
+    const b = document.createElement('button');
+    b.textContent = k;
+    b.className = 'preset-btn';
+    b.title = 'クリックで読み込み。右クリックで削除';
+    b.addEventListener('click', ()=>applyPreset(ps[k]));
+    b.addEventListener('contextmenu', (ev)=>{ ev.preventDefault(); if(confirm(`プリセット "${k}" を削除しますか？`)) removePreset(k); });
+    presetList.appendChild(b);
+  }
+}
+renderPresetList();
+
+/* ======= プリセット操作ボタン ======= */
+savePresetBtn.addEventListener('click', ()=>{
+  const name = prompt('プリセット名を入力してください（例: 講義モード）');
+  if(!name) return;
+  const cfg = currentConfig();
+  addPreset(name, cfg);
+  showInfo('プリセットを保存しました: ' + name);
+});
+loadPresetBtn.addEventListener('click', ()=>{
+  const ps = loadPresets();
+  const keys = Object.keys(ps);
+  if(keys.length === 0){ alert('プリセットがありません'); return; }
+  const name = prompt('読み込むプリセット名を入力してください。\n候補: ' + keys.join(', '));
+  if(!name) return;
+  if(!ps[name]){ alert('そのプリセットは存在しません'); return; }
+  applyPreset(ps[name]);
+  showInfo('プリセットを適用しました: ' + name);
+});
+exportPresetBtn.addEventListener('click', ()=>{
+  const ps = loadPresets();
+  const blob = new Blob([JSON.stringify(ps, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ts_presets.json'; document.body.appendChild(a); a.click();
+  a.remove(); URL.revokeObjectURL(url);
+});
+importPresetBtn.addEventListener('click', ()=>{
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'application/json';
+  inp.onchange = ()=> {
+    const f = inp.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      try{
+        const data = JSON.parse(reader.result);
+        // マージ
+        const ps = loadPresets();
+        Object.assign(ps, data);
+        savePresets(ps);
+        renderPresetList();
+        showInfo('プリセットをインポートしました');
+      }catch(e){ alert('不正なファイルです'); }
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+});
+resetPresetsBtn.addEventListener('click', ()=>{
+  if(confirm('すべてのプリセットを削除しますか？')){ localStorage.removeItem(PRESET_KEY); renderPresetList(); showInfo('プリセットをリセットしました'); }
+});
+
+/* ======= 設定の取得と適用 ======= */
+function currentConfig(){
+  return {
+    delay: parseFloat(delaySlider.value),
+    volume: parseInt(volumeSlider.value),
+    speed: parseFloat(speedSlider.value),
+    strength: parseFloat(strengthSlider.value),
+    loop: loopToggle.checked
+  };
+}
+function applyPreset(cfg){
+  if(typeof cfg.delay === 'number') { delaySlider.value = cfg.delay; audioDelay = cfg.delay; delayValue.textContent = cfg.delay.toFixed(2); }
+  if(typeof cfg.volume === 'number') { volumeSlider.value = cfg.volume; applyVolume(cfg.volume); }
+  if(typeof cfg.speed === 'number') { speedSlider.value = cfg.speed; baseSpeed = cfg.speed; video.playbackRate = baseSpeed; audio.playbackRate = baseSpeed; speedValue.textContent = baseSpeed.toFixed(2) + 'x'; }
+  if(typeof cfg.strength === 'number') { strengthSlider.value = cfg.strength; userDriftStrength = cfg.strength; strengthValue.textContent = cfg.strength.toFixed(2); }
+  if(typeof cfg.loop === 'boolean') { loopToggle.checked = cfg.loop; }
+}
+
+/* ======= ヘルパー ======= */
+function showInfo(msg, isErr=false){
+  info.textContent = msg;
+  info.className = isErr ? 'small bad' : 'small';
+}
+function ensureAudioContext(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 1.0;
+    sourceNode.connect(gainNode).connect(audioCtx.destination);
+    showInfo('AudioContext 初期化');
+  }catch(e){
+    showInfo('AudioContext 初期化に失敗: ' + e.message, true);
+  }
+}
+
+/* ======= 読み込み / 再生等 ======= */
+btnLoad.addEventListener('click', ()=>{
+  const v = videoURL.value.trim();
+  const a = audioURL.value.trim();
+  if(v) video.src = v;
+  if(a) audio.src = a;
+  // 初期表示
+  driftDisplay.textContent = 'ズレ: 0.000 秒';
+  driftDisplay.style.color = 'green';
+  showInfo('読み込みしました。再生ボタンで開始してください。CORSに注意。');
+});
+
+btnPlay.addEventListener('click', async ()=>{
+  ensureAudioContext();
+  try{ await audioCtx.resume(); }catch(e){}
+  audio.currentTime = Math.max(0, video.currentTime + audioDelay);
+  await Promise.all([video.play().catch(()=>{}), audio.play().catch(()=>{})]);
+  startSyncLoop();
+});
+btnPause.addEventListener('click', ()=>{
+  video.pause(); audio.pause(); stopSyncLoop();
+});
+btnSyncNow.addEventListener('click', ()=>{
+  audio.currentTime = Math.max(0, video.currentTime + audioDelay);
+  showInfo('手動で同期しました');
+});
+
+/* ======= スライダーイベント（UI表示と反映） ======= */
+delaySlider.addEventListener('input', (e)=>{ audioDelay = parseFloat(e.target.value); delayValue.textContent = audioDelay.toFixed(2); });
+volumeSlider.addEventListener('input', (e)=>{ const v = parseInt(e.target.value); volumeValue.textContent = v + '%'; applyVolume(v); });
+function applyVolume(v){
+  if(gainNode && audioCtx){ try{ gainNode.gain.linearRampToValueAtTime(v/100, audioCtx.currentTime + 0.05); }catch(e){ audio.volume = v/100; } }
+  else { audio.volume = v/100; }
+}
+speedSlider.addEventListener('input', (e)=>{ baseSpeed = parseFloat(e.target.value); speedValue.textContent = baseSpeed.toFixed(2) + 'x'; video.playbackRate = baseSpeed; audio.playbackRate = baseSpeed; driftStrength = Math.max(0.1, Math.min(10, userDriftStrength * baseSpeed)); strengthValue.textContent = driftStrength.toFixed(2); });
+strengthSlider.addEventListener('input', (e)=>{ userDriftStrength = parseFloat(e.target.value); driftStrength = Math.max(0.1, Math.min(10, userDriftStrength * baseSpeed)); strengthValue.textContent = driftStrength.toFixed(2); });
+loopToggle.addEventListener('change', (e)=>{ isLooping = e.target.checked; video.loop = isLooping; });
+
+/* ======= 同期ループ（requestAnimationFrame + スムージング） ======= */
+let lastUpdateTime = null;
+let smoothedRate = 1.0;
+
+function startSyncLoop(){
+  if(isSyncing) return;
+  isSyncing = true;
+  lastUpdateTime = performance.now();
+  smoothedRate = baseSpeed;
+  function loop(now){
+    if(!isSyncing){ return; }
+    // 自動同期がオフなら画面更新のみ
+    if(!autoSyncToggle.checked){ driftDisplay.textContent = `ズレ: ${(video.currentTime + audioDelay - audio.currentTime).toFixed(3)} 秒 (自動同期オフ)`; rafId = requestAnimationFrame(loop); return; }
+
+    const videoTime = video.currentTime;
+    const audioTime = audio.currentTime;
+    const diff = (videoTime + audioDelay) - audioTime;
+    const k = 0.05 * Math.min(1, driftStrength/2);
+    let targetFactor = 1 + diff * k;
+    targetFactor = Math.max(0.95, Math.min(1.05, targetFactor));
+    const targetRate = baseSpeed * targetFactor;
+    const dt = Math.min(0.1, (now - lastUpdateTime) / 1000);
+    const smoothFactor = 1 - Math.exp(-10 * dt);
+    smoothedRate += (targetRate - smoothedRate) * smoothFactor;
+    try{
+      audio.playbackRate = Math.max(0.25, Math.min(2.0, smoothedRate));
+      if('preservesPitch' in audio) audio.preservesPitch = true;
+      else if('mozPreservesPitch' in audio) audio.mozPreservesPitch = true;
+      else if('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = true;
+    }catch(e){}
+    driftDisplay.textContent = `ズレ: ${diff.toFixed(3)} 秒`;
+    const absDiff = Math.abs(diff);
+    driftDisplay.style.color = absDiff < 0.05 ? 'green' : (absDiff < 0.2 ? 'orange' : 'red');
+
+    lastUpdateTime = now;
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function stopSyncLoop(){
+  if(!isSyncing) return;
+  isSyncing = false;
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
+
+/* ======= ドラッグ＆ドロップとファイル選択サポート ======= */
+['dragenter','dragover'].forEach(evt=>{
+  dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.style.borderColor = '#007bff'; dropzone.style.background = '#f6fbff'; });
+});
+['dragleave','drop'].forEach(evt=>{
+  dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.style.borderColor = '#ccc'; dropzone.style.background = ''; });
+});
+dropzone.addEventListener('drop', (e)=>{
+  e.preventDefault();
+  const dt = e.dataTransfer;
+  if(dt && dt.files && dt.files.length){
+    handleFiles(dt.files);
+  } else {
+    showInfo('ファイルが見つかりませんでした', true);
+  }
+});
+dropzone.addEventListener('click', ()=>{ const inp = document.createElement('input'); inp.type='file'; inp.accept='audio/*,video/*'; inp.onchange = ()=> handleFiles(inp.files); inp.click(); });
+dropzone.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') { dropzone.click(); } });
+
+function handleFiles(files){
+  const f = files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  if(f.type.startsWith('video/')){ video.src = url; showInfo('ローカル動画を読み込みました'); }
+  else if(f.type.startsWith('audio/')){ audio.src = url; showInfo('ローカル音声を読み込みました'); }
+  else { // 不明な場合は audio に入れてみる
+    audio.src = url; showInfo('ローカルファイルを読み込みました（タイプ:' + f.type + ')'); }
+}
+
+/* ======= キーボードショートカット ======= */
+/* Space: 再生/停止、Left/Right: -/+10秒, Up/Down: Volume +/-5, < and > : speed +/-0.05 */
+window.addEventListener('keydown', (e)=>{
+  // ignore if focus is in an input or textarea
+  const tag = document.activeElement.tagName.toLowerCase();
+  if(tag === 'input' || tag === 'textarea') return;
+
+  if(e.code === 'Space'){ e.preventDefault(); if(video.paused) btnPlay.click(); else btnPause.click(); }
+  else if(e.code === 'ArrowLeft'){ e.preventDefault(); video.currentTime = Math.max(0, video.currentTime - 10); if(!video.paused){ audio.currentTime = Math.max(0, video.currentTime + audioDelay); } }
+  else if(e.code === 'ArrowRight'){ e.preventDefault(); video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10); if(!video.paused){ audio.currentTime = Math.max(0, video.currentTime + audioDelay); } }
+  else if(e.code === 'ArrowUp'){ e.preventDefault(); const newV = Math.min(100, parseInt(volumeSlider.value) + 5); volumeSlider.value = newV; applyVolume(newV); volumeValue.textContent = newV + '%'; }
+  else if(e.code === 'ArrowDown'){ e.preventDefault(); const newV = Math.max(0, parseInt(volumeSlider.value) - 5); volumeSlider.value = newV; applyVolume(newV); volumeValue.textContent = newV + '%'; }
+  else if(e.key === '<' || e.key === ','){ e.preventDefault(); const s = Math.max(0.25, parseFloat(speedSlider.value) - 0.05); speedSlider.value = s.toFixed(2); speedSlider.dispatchEvent(new Event('input')); }
+  else if(e.key === '>' || e.key === '.'){ e.preventDefault(); const s = Math.min(2.0, parseFloat(speedSlider.value) + 0.05); speedSlider.value = s.toFixed(2); speedSlider.dispatchEvent(new Event('input')); }
+});
+
+/* ======= エラーハンドリング、イベントの追加 ======= */
+video.addEventListener('error', ()=> showInfo('動画の再生に問題が発生しました（URL/CORS を確認）', true));
+audio.addEventListener('error', ()=> showInfo('音声の再生に問題が発生しました（URL/CORS を確認）', true));
+video.addEventListener('play', ()=> { if(!audio.paused) return; /* ensure audio plays */ try{ audio.play().catch(()=>{}); }catch(e){} });
+video.addEventListener('pause', ()=> { if(!audio.paused) audio.pause(); });
+
+/* ページ離脱時のクリーンアップ */
+window.addEventListener('beforeunload', ()=> {
+  try { if(audioCtx) audioCtx.close(); } catch(e){}
+});
+
+/* ======= 初期表示 ======= */
+delayValue.textContent = parseFloat(delaySlider.value).toFixed(2);
+volumeValue.textContent = volumeSlider.value + '%';
+speedValue.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x';
+strengthValue.textContent = parseFloat(strengthSlider.value).toFixed(2);
+
+showInfo('準備完了。操作方法はツールチップを参照してください。');
+
+</script>
+</body>
+</html>
