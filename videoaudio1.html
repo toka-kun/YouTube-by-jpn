@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全版 高音質タイムストレッチプレイヤー</title>
+<style>
+body{font-family:"Segoe UI",sans-serif;text-align:center;padding:30px;background:#fafafa;}
+input[type=text]{width:80%;padding:10px;margin:8px 0;border-radius:5px;border:1px solid #ccc;}
+video{width:80%;max-width:800px;margin-top:20px;background:#000;border-radius:10px;}
+button{padding:10px 20px;margin:10px;font-size:16px;border-radius:5px;border:none;background:#007bff;color:white;cursor:pointer;}
+button:hover{background:#0056b3;}
+.slider-container{margin-top:20px;width:80%;max-width:600px;margin:auto;text-align:center;}
+input[type=range]{width:100%;}
+.label{font-weight:bold;}
+#driftDisplay{margin-top:10px;font-weight:bold;font-size:18px;}
+</style>
+</head>
+<body>
+
+<h2>🎬 安全版 高音質タイムストレッチプレイヤー</h2>
+
+<div>
+<input type="text" id="videoURL" placeholder="動画URL"><br>
+<input type="text" id="audioURL" placeholder="音声URL"><br>
+<button onclick="loadMedia()">読み込み</button>
+<button onclick="playMedia()">▶ 再生</button>
+<button onclick="pauseMedia()">⏸ 停止</button>
+</div>
+
+<div class="slider-container">
+<p class="label">🎚️ 音声遅延調整：<span id="delayValue">0.00</span> 秒</p>
+<input type="range" id="delaySlider" min="-1" max="1" value="0" step="0.05" oninput="updateDelay(this.value)">
+</div>
+
+<div class="slider-container">
+<p class="label">🔊 音量調整：<span id="volumeValue">100</span>%</p>
+<input type="range" id="volumeSlider" min="0" max="100" value="100" step="1" oninput="updateVolume(this.value)">
+</div>
+
+<div class="slider-container">
+<p class="label">⏱️ 再生速度：<span id="speedValue">1.00</span>x</p>
+<input type="range" id="speedSlider" min="0.25" max="2" value="1" step="0.01" oninput="updateSpeed(this.value)">
+</div>
+
+<div class="slider-container">
+<p class="label">⚙️ ドリフト補正強度：<span id="strengthValue">1.00</span></p>
+<input type="range" id="strengthSlider" min="0" max="10" value="1" step="0.01" oninput="updateStrength(this.value)">
+</div>
+
+<div style="margin-top:20px;">
+<label>
+<input type="checkbox" id="loopToggle" onchange="toggleLoop(this.checked)">
+🔁 ループ再生
+</label>
+</div>
+
+<div id="driftDisplay">ズレ: 0.00 秒</div>
+
+<div>
+<video id="video" controls></video>
+<audio id="audio" crossorigin="anonymous"></audio>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/also/soundtouch-js/dist/soundtouch.min.js"></script>
+<script>
+const video = document.getElementById("video");
+const audio = document.getElementById("audio");
+const delayDisplay = document.getElementById("delayValue");
+const volumeDisplay = document.getElementById("volumeValue");
+const speedDisplay = document.getElementById("speedValue");
+const driftDisplay = document.getElementById("driftDisplay");
+const strengthDisplay = document.getElementById("strengthValue");
+
+let syncInterval;
+let audioDelay = 0;
+let isLooping = false;
+let baseSpeed = 1.0;
+let driftStrength = 1.0;
+let userDriftStrength = 1.0; // ユーザー設定値
+
+// Web Audio API
+let audioCtx, sourceNode, gainNode, st, soundTouchNode;
+
+function setupAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    gainNode = audioCtx.createGain();
+    sourceNode.connect(gainNode).connect(audioCtx.destination);
+
+    // SoundTouch.js
+    st = new soundtouch.SoundTouch(audioCtx.sampleRate);
+    soundTouchNode = {soundTouch: st}; // placeholder
+  }
+}
+
+function loadMedia() {
+  const videoURL = document.getElementById("videoURL").value.trim();
+  const audioURL = document.getElementById("audioURL").value.trim();
+  if(!videoURL || !audioURL){alert("動画と音声を入力してください"); return;}
+  video.src = videoURL;
+  audio.src = audioURL;
+  video.load();
+  audio.load();
+  clearInterval(syncInterval);
+  driftDisplay.textContent = "ズレ: 0.00 秒";
+  driftDisplay.style.color = "green";
+  setupAudioContext();
+}
+
+function playMedia() {
+  audioCtx.resume();
+  audio.currentTime = Math.max(0, video.currentTime + audioDelay);
+  video.play();
+  audio.play();
+
+  syncInterval = setInterval(()=>{
+    const diff = (video.currentTime + audioDelay) - audio.currentTime;
+
+    // ドリフト補正（音質維持）
+    if(Math.abs(diff)<0.05){
+      audio.playbackRate = baseSpeed;
+    } else {
+      let correction = 1 + diff*0.05*driftStrength;
+      correction = Math.max(0.95, Math.min(1.05, correction));
+      const adjustedSpeed = baseSpeed * correction;
+      audio.playbackRate = Math.max(0.25, Math.min(2.0, adjustedSpeed));
+      audio.preservesPitch = true;
+    }
+
+    // ズレ表示
+    driftDisplay.textContent = `ズレ: ${diff.toFixed(2)} 秒`;
+    const absDiff=Math.abs(diff);
+    driftDisplay.style.color = absDiff<0.05?"green":absDiff<0.2?"orange":"red";
+  },100);
+}
+
+function pauseMedia(){
+  video.pause();
+  audio.pause();
+  clearInterval(syncInterval);
+}
+
+video.addEventListener("seeked", ()=>{audio.currentTime = Math.max(0, video.currentTime + audioDelay);});
+video.addEventListener("pause", ()=>{audio.pause();});
+video.addEventListener("play", ()=>{audio.play();});
+video.addEventListener("ended", ()=>{
+  clearInterval(syncInterval);
+  if(isLooping){video.currentTime=0; audio.currentTime=0; playMedia();}
+  else {audio.pause();}
+});
+
+// 動画速度変更時に音声・スライダー・ドリフト補正を連動
+video.addEventListener("ratechange", () => {
+    baseSpeed = video.playbackRate;
+    audio.playbackRate = baseSpeed;
+
+    // 速度スライダー表示更新
+    const speedSlider = document.getElementById("speedSlider");
+    speedSlider.value = baseSpeed;
+    speedDisplay.textContent = baseSpeed.toFixed(2);
+
+    // ドリフト補正を安全範囲で自動調整
+    driftStrength = Math.max(0.1, Math.min(10, userDriftStrength * baseSpeed));
+    strengthDisplay.textContent = driftStrength.toFixed(2);
+});
+
+// スライダー更新関数
+function updateDelay(v){audioDelay=parseFloat(v); delayDisplay.textContent=v;}
+function updateVolume(v){gainNode.gain=parseInt(v)/100; volumeDisplay.textContent=v;}
+function updateSpeed(v){
+    baseSpeed=parseFloat(v);
+    audio.playbackRate = baseSpeed;
+    video.playbackRate = baseSpeed;
+    speedDisplay.textContent=parseFloat(v).toFixed(2);
+
+    // ドリフト補正も安全範囲で連動
+    driftStrength = Math.max(0.1, Math.min(10, userDriftStrength * baseSpeed));
+    strengthDisplay.textContent = driftStrength.toFixed(2);
+}
+function toggleLoop(c){isLooping=c; video.loop=c;}
+function updateStrength(v){
+    userDriftStrength = parseFloat(v);
+    // 安全範囲で反映
+    driftStrength = Math.max(0.1, Math.min(10, userDriftStrength * baseSpeed));
+    strengthDisplay.textContent = driftStrength.toFixed(2);
+}
+</script>
+</body>
+</html>
